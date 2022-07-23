@@ -14,45 +14,11 @@ public class Boot : MonoBehaviour
 
     private BurstPathfinder _pathfinder;
 
-    private void Start()
-    {
-        BuildTestGraph(1000, 1000);
-    }
+    private void Start() => BuildTestGraph(1000, 1000);
 
-    private void Update()
-    {
-        var startPosition = _start.position;
-        var endPosition = _end.position;
+    private void Update() => UpdateInternal();
 
-        _stopwatch.Reset();
-        _stopwatch.Start();
-        
-        var path = _pathfinder.FindPathImmediate(new float2(startPosition.x, startPosition.y), new float2(endPosition.x, endPosition.y));
-        _stopwatch.Stop();
-        var timeSpent = _stopwatch.Elapsed.TotalMilliseconds;
-        
-        Debug.LogError($"path took {timeSpent} ms");
-        
-        if (!path.IsCreated)
-        {
-            return;
-        }
-
-        for (var i = 1; i < path.Length; i++)
-        {
-            var currNode = path[i];
-            var prevNode = path[i - 1];
-
-            Debug.DrawLine(prevNode.Position.xyy, currNode.Position.xyx, Color.green);
-        }
-
-        path.Dispose();
-    }
-
-    private void OnDestroy()
-    {
-        _pathfinder.Dispose();
-    }
+    private void OnDestroy() => _pathfinder.Dispose();
 
     private void BuildTestGraph(int x, int y)
     {
@@ -109,5 +75,53 @@ public class Boot : MonoBehaviour
         }
         
         _pathfinder = new BurstPathfinder(nodes);
+    }
+    
+    private void UpdateInternal()
+    {
+        var request = GetPathRequest();
+        GetImmediatePath(request);
+    }
+    
+    private PathRequest GetPathRequest()
+    {
+        var startPosition = _start.position;
+        var endPosition = _end.position;
+
+        var from = new float2(startPosition.x, startPosition.y);
+        var to = new float2(endPosition.x, endPosition.y);
+
+        var request = new PathRequest(from, to);
+        return request;
+    }
+
+    private void GetImmediatePath(PathRequest request)
+    {
+        _stopwatch.Reset();
+        _stopwatch.Start();
+
+        var pathResult = _pathfinder.FindPathImmediate(request);
+        var path = pathResult.Result;
+
+        _stopwatch.Stop();
+
+        var timeSpent = _stopwatch.Elapsed.TotalMilliseconds;
+
+        Debug.LogError($"path took {timeSpent} ms");
+
+        if (!path.IsCreated)
+        {
+            return;
+        }
+
+        for (var i = 1; i < path.Length; i++)
+        {
+            var currNode = path[i];
+            var prevNode = path[i - 1];
+
+            Debug.DrawLine(prevNode.Position.xyy, currNode.Position.xyx, Color.green);
+        }
+
+        pathResult.Dispose();
     }
 }

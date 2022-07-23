@@ -28,20 +28,36 @@ namespace Pathfinder.Burst
             }
         }
 
-        public NativeList<PathNode> FindPathImmediate(float2 from, float2 to)
+        public PathResult FindPathImmediate(PathRequest request)
         {
             if (!_nodes.IsCreated || _nodes.Length == 0)
             {
                 return default;
             }
             
-            var job = CratePathfindingJob(from, to);
-            
-            job.Schedule().Complete();
+            var job = CratePathfindingJob(request.From, request.To);
+            var jobHandle = job.Schedule();
+            var result = new PathResult(request, job.OutPath, jobHandle);
 
-            return job.OutPath;
+            jobHandle.Complete();
+            
+            return result;
         }
         
+        public PathResult FindPathAsync(PathRequest request)
+        {
+            if (!_nodes.IsCreated || _nodes.Length == 0)
+            {
+                return default;
+            }
+            
+            var job = CratePathfindingJob(request.From, request.To);
+            var jobHandle = job.Schedule();
+            var result = new PathResult(request, job.OutPath, jobHandle);
+            
+            return result;
+        }
+
         public void RebuildGraph([NotNull] IReadOnlyList<PathNodeInfo> nodes)
         {
             Dispose();
