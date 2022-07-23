@@ -10,27 +10,29 @@ namespace Pathfinder.Burst
     public readonly struct PathResult : IDisposable
     {
         public readonly PathRequest Request;
-        public readonly NativeList<PathNode> Result;
+        public readonly NativeList<PathNode> Path;
 
         public bool IsComplete => _pathfindingJob.IsCompleted;
         
-        public PathResult(PathRequest request, NativeList<PathNode> result, JobHandle pathfindingJob)
+        public PathResult(PathRequest request, NativeList<PathNode> path, JobHandle pathfindingJob)
         {
             Request = request;
-            Result = result;
+            Path = path;
             
             _pathfindingJob = pathfindingJob;
         }
 
         public void Dispose()
         {
-            if (!Result.IsCreated)
+            if (!Path.IsCreated)
             {
                 return;
             }
             
-            Result.Dispose();
+            Path.Dispose();
         }
+        
+        public void ForceComplete() => _pathfindingJob.Complete();
 
         private readonly JobHandle _pathfindingJob;
     }

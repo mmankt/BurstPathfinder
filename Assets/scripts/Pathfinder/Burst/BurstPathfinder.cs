@@ -28,7 +28,7 @@ namespace Pathfinder.Burst
             }
         }
 
-        public PathResult FindPathImmediate(PathRequest request)
+        public PathResult FindPath(PathRequest request, bool immediate = false)
         {
             if (!_nodes.IsCreated || _nodes.Length == 0)
             {
@@ -39,21 +39,10 @@ namespace Pathfinder.Burst
             var jobHandle = job.Schedule();
             var result = new PathResult(request, job.OutPath, jobHandle);
 
-            jobHandle.Complete();
-            
-            return result;
-        }
-        
-        public PathResult FindPathAsync(PathRequest request)
-        {
-            if (!_nodes.IsCreated || _nodes.Length == 0)
+            if (immediate)
             {
-                return default;
+                jobHandle.Complete();
             }
-            
-            var job = CratePathfindingJob(request.From, request.To);
-            var jobHandle = job.Schedule();
-            var result = new PathResult(request, job.OutPath, jobHandle);
             
             return result;
         }
