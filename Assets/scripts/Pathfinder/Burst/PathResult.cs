@@ -7,7 +7,7 @@ namespace Pathfinder.Burst
     /// <summary>
     /// Path result
     /// </summary>
-    public readonly struct PathResult : IDisposable
+    public struct PathResult : IDisposable
     {
         public readonly PathRequest Request;
         public readonly NativeList<PathNode> Path;
@@ -32,7 +32,7 @@ namespace Pathfinder.Burst
             Path.Dispose();
         }
         
-        public void ForceComplete() => _pathfindingJob.Complete();
+        public void Complete() => _pathfindingJob.Complete();
 
         private readonly JobHandle _pathfindingJob;
     }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -107,8 +108,9 @@ namespace Pathfinder
         {
             var request = CrateTestPathRequest();
         
-            GetPathImmediate(request);
+            //GetPathImmediate(request);
             //GetPath(request);
+            StartCoroutine(GetPathCoroutine(request));
         }
 
         private PathRequest CrateTestPathRequest()
@@ -142,7 +144,7 @@ namespace Pathfinder
             pathResult.Dispose();
         }
 
-        private void GetPath(PathRequest request) => GetPathAsync(request);
+        private void GetPath(PathRequest request) => GetPathAsync(request); 
 
         private async void GetPathAsync(PathRequest request)
         {
@@ -155,12 +157,31 @@ namespace Pathfinder
             }
 
             //looks like despite the job being marked as complete you need to do it manually as reading from result is throwing errors (maybe it's not updated until the next frame ?) 
-            pathResult.ForceComplete();
+            pathResult.Complete();
             var timeSpent = Time.realtimeSinceStartup - startTime;
 
             Debug.LogError($"pathfinding {request.From} {request.To} done in {timeSpent}s ! path has {pathResult.Path.Length} nodes");
         
-            //DrawDebugPath(pathResult.Path);
+            DrawDebugPath(pathResult.Path);
+        
+            pathResult.Dispose();
+        }
+        
+        private IEnumerator GetPathCoroutine(PathRequest request)
+        {
+            var startTime = Time.realtimeSinceStartup;
+            var pathResult = _pathfinder.FindPath(request);
+            
+            while (!pathResult.IsComplete)
+            {
+                yield return null;
+            }
+            
+            var timeSpent = Time.realtimeSinceStartup - startTime;
+            pathResult.Complete();
+            Debug.LogError($"pathfinding {request.From} {request.To} done in {timeSpent}s ! path has {pathResult.Path.Length} nodes");
+        
+            DrawDebugPath(pathResult.Path);
         
             pathResult.Dispose();
         }
