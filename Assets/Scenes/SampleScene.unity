@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 41557442}
   - component: {fileID: 41557441}
   m_Layer: 0
-  m_Name: boot
+  m_Name: demo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

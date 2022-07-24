@@ -16,8 +16,6 @@ namespace Pathfinder.Burst
         
         [WriteOnly] public NativeList<PathNode> OutPath;
 
-        [DeallocateOnJobCompletion] public NativeArray<byte> Cts;
-
         public void Execute()
         {
             var nodes = new NativeArray<PathNodeCalculation>(InputNodes.Length, Allocator.Temp);
@@ -36,11 +34,6 @@ namespace Pathfinder.Burst
 
             while (!_queue.IsEmpty())
             {
-                if (Cts[0] == 1)
-                {
-                    return;
-                }
-                
                 var current = _queue.Pop(ref nodes, ref indexes);
                 
                 if (current.Node.Index == goal.Index)
@@ -62,11 +55,6 @@ namespace Pathfinder.Burst
                 var neighbours = NodeNeighbours.GetValuesForKey(current.Node.Index);
                 while (neighbours.MoveNext())
                 {
-                    if (Cts[0] == 1)
-                    {
-                        return;
-                    }
-                    
                     var neighbour = nodes[neighbours.Current];
                     if (neighbour.IsClosed)
                     {

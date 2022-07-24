@@ -10,7 +10,7 @@ using Debug = UnityEngine.Debug;
 
 namespace Pathfinder
 {
-    public sealed class Boot : MonoBehaviour
+    public sealed class BurstPathfinderDemo : MonoBehaviour
     {
         [SerializeField] private Transform _start;
         [SerializeField] private Transform _end;
@@ -117,11 +117,10 @@ namespace Pathfinder
         {
             var startPosition = _start.position;
             var endPosition = _end.position;
-
             var from = new float2(startPosition.x, startPosition.y);
             var to = new float2(endPosition.x, endPosition.y);
-
             var request = new PathRequest(from, to);
+            
             return request;
         }
 
@@ -156,8 +155,9 @@ namespace Pathfinder
                 await Task.Delay(1);
             }
 
-            //looks like despite the job being marked as complete you need to do it manually as reading from result is throwing errors (maybe it's not updated until the next frame ?) 
+            //looks like despite the job being marked as complete you need to Complete() it as reading from result is throwing errors
             pathResult.Complete();
+            
             var timeSpent = Time.realtimeSinceStartup - startTime;
 
             Debug.LogError($"pathfinding {request.From} {request.To} done in {timeSpent}s ! path has {pathResult.Path.Length} nodes");
@@ -178,7 +178,9 @@ namespace Pathfinder
             }
             
             var timeSpent = Time.realtimeSinceStartup - startTime;
+            
             pathResult.Complete();
+         
             Debug.LogError($"pathfinding {request.From} {request.To} done in {timeSpent}s ! path has {pathResult.Path.Length} nodes");
         
             DrawDebugPath(pathResult.Path);
