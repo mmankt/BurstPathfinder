@@ -26,29 +26,33 @@ namespace Pathfinder.Burst
             {
                 _nodeNeighbours.Dispose();
             }
+            
+            //todo: complete all jobs in progress, pathfinder needs to track them and force complete each before it disposes collections
         }
 
-        public PathResult FindPath(PathRequest request, bool immediate = false)
+        public PathResult FindPath(PathRequest request, bool scheduleImmediately = true)
         {
             if (!_nodes.IsCreated || _nodes.Length == 0)
             {
                 return default;
             }
             
-            var job = CratePathfindingJob(request.From, request.To);
-            var jobHandle = job.Schedule();
-            var result = new PathResult(request, job.OutPath, jobHandle);
-
-            if (immediate)
+            if (scheduleImmediately)
             {
-                jobHandle.Complete();
+                var job = CratePathfindingJob(request.From, request.To);
+                var jobHandle = job.Schedule();
+                var result = new PathResult(request, job.OutPath, jobHandle);
+                            
+                return result;
             }
-            
-            return result;
+
+            //Todo: add a path request list that is scheduled and sorted per request priority 
+            throw new NotImplementedException($"[{nameof(BurstPathfinder)}]: Non immediate scheduling not implemented yet");
         }
 
         public void RebuildGraph([NotNull] IReadOnlyList<PathNodeInfo> nodes)
         {
+            //todo: right now as a job is running the graph should be immutable or the job should get always get a new copy of the graph (lots of memory for huge graphs), any changes to it or individual nodes should be made before scheduling and after all current jobs are done 
             Dispose();
 
             if (nodes == null)
@@ -58,7 +62,7 @@ namespace Pathfinder.Burst
 
             if (nodes.Count == 0)
             {
-                Debug.LogError("Empty node list provided");
+                Debug.LogError($"[{nameof(BurstPathfinder)}]: Empty node list provided");
                 return;
             }
             
@@ -76,7 +80,7 @@ namespace Pathfinder.Burst
                 }
             }
             
-            Debug.LogError($"Graph created with {nodes.Count} nodes.");
+            Debug.Log($"[{nameof(BurstPathfinder)}]: graph created with {nodes.Count} nodes.");
         }
 
         private NativeArray<PathNode> _nodes;

@@ -5,6 +5,9 @@ using Unity.Mathematics;
 
 namespace Pathfinder.Burst
 {
+    /// <summary>
+    ///  <see cref="IJob"/> that finds a path in the provided node graph 
+    /// </summary>
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, OptimizeFor = OptimizeFor.Performance)]
     public struct PathfindingJob : IJob
     {

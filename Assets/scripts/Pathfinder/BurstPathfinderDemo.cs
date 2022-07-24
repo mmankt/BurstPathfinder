@@ -10,6 +10,9 @@ using Debug = UnityEngine.Debug;
 
 namespace Pathfinder
 {
+    /// <summary>
+    /// Demo usage of the burst pathfinder 
+    /// </summary>
     public sealed class BurstPathfinderDemo : MonoBehaviour
     {
         [SerializeField] private Transform _start;
@@ -35,7 +38,7 @@ namespace Pathfinder
             }
         }
     
-        private void Start() => BuildTestGraph(1000, 1000);
+        private void Start() => BuildTestGraph(100, 100);
 
         private void Update() => UpdateInternal();
 
@@ -97,20 +100,20 @@ namespace Pathfinder
         
             _pathfinder = new BurstPathfinder(nodes);
 
-            var request = CrateTestPathRequest();
-            for (var i = 0; i < 1000; i++)
-            {
-                GetPath(request);
-            }
+            _stopwatch.Start();
         }
     
         private void UpdateInternal()
         {
             var request = CrateTestPathRequest();
-        
-            //GetPathImmediate(request);
-            //GetPath(request);
-            StartCoroutine(GetPathCoroutine(request));
+            
+            //todo async and coroutine waiting for a job to complete is waaay longer than immediate, investigate
+            //StartCoroutine(GetPathCoroutine(request));
+
+            //GetPathAsync(request);
+            
+            //Ryzen 5900x does this in around 0.35 ms for 10000 nodes / 27 ms for 1000000 nodes, burst compilation speeds up c# ~10 times
+            GetPathImmediate(request);
         }
 
         private PathRequest CrateTestPathRequest()
@@ -126,66 +129,63 @@ namespace Pathfinder
 
         private void GetPathImmediate(PathRequest request)
         {
-            _stopwatch.Reset();
-            _stopwatch.Start();
-
-            var pathResult = _pathfinder.FindPath(request, immediate: true);
+            var startTime = _stopwatch.Elapsed.TotalMilliseconds;
+            
+            using var pathResult = _pathfinder.FindPath(request);
+            
+            pathResult.Complete();
+            
             var path = pathResult.Path;
+            var endTime = _stopwatch.Elapsed.TotalMilliseconds;
+            var timeSpent = endTime - startTime;
 
-            _stopwatch.Stop();
-
-            var timeSpent = _stopwatch.Elapsed.TotalMilliseconds;
-
-            Debug.LogError($"immediate path took {timeSpent} ms");
+            Debug.Log($"Immediate path took {timeSpent} ms");
 
             DrawDebugPath(path);
-
-            pathResult.Dispose();
         }
-
-        private void GetPath(PathRequest request) => GetPathAsync(request); 
 
         private async void GetPathAsync(PathRequest request)
         {
-            var startTime = Time.realtimeSinceStartup;
-            var pathResult = _pathfinder.FindPath(request);
+            var startTime = _stopwatch.Elapsed.TotalMilliseconds;
 
+            using var pathResult = _pathfinder.FindPath(request);
+            
             while (!pathResult.IsComplete)
             {
                 await Task.Delay(1);
             }
 
-            //looks like despite the job being marked as complete you need to Complete() it as reading from result is throwing errors
+            //Note: looks like despite the job being marked as complete you need to Complete() it as reading from result is throwing errors
             pathResult.Complete();
-            
-            var timeSpent = Time.realtimeSinceStartup - startTime;
 
-            Debug.LogError($"pathfinding {request.From} {request.To} done in {timeSpent}s ! path has {pathResult.Path.Length} nodes");
-        
+            var endTime = _stopwatch.Elapsed.TotalMilliseconds;
+            var timeSpent = endTime - startTime;
+
+            Debug.Log($"Async path took {timeSpent} ms");
+
             DrawDebugPath(pathResult.Path);
-        
-            pathResult.Dispose();
         }
         
         private IEnumerator GetPathCoroutine(PathRequest request)
         {
-            var startTime = Time.realtimeSinceStartup;
-            var pathResult = _pathfinder.FindPath(request);
+            var startTime = _stopwatch.Elapsed.TotalMilliseconds;
+            
+            using var pathResult = _pathfinder.FindPath(request);
             
             while (!pathResult.IsComplete)
             {
                 yield return null;
             }
             
-            var timeSpent = Time.realtimeSinceStartup - startTime;
+            var endTime = _stopwatch.Elapsed.TotalMilliseconds;
+            var timeSpent = endTime - startTime;
             
+            //Note: looks like despite the job being marked as complete you need to Complete() it as reading from result is throwing errors
             pathResult.Complete();
          
-            Debug.LogError($"pathfinding {request.From} {request.To} done in {timeSpent}s ! path has {pathResult.Path.Length} nodes");
+            Debug.Log($"Coroutine path took {timeSpent} ms");
         
             DrawDebugPath(pathResult.Path);
-        
-            pathResult.Dispose();
         }
     }
 }
